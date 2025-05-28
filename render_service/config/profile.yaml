@@ -1,0 +1,5 @@
+input_path: crawl_service/output/results.json
+output_path: render_service/output/rendered_output.md
+format: markdown
+title: Requirements Management Report
+style: classic
