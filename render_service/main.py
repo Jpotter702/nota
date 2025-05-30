@@ -1,9 +1,38 @@
-# render_service/src/main.py
-
+# render_service/main.py
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 import argparse
 import json
 from pathlib import Path
 import yaml
+
+def prompt_for_config() -> dict:
+    input_path = input("Path to crawl results JSON: ") or "crawl_service/output/results.json"
+    
+    print("\nChoose render mode:")
+    print("1. fit_markdown")
+    print("2. html")
+    print("3. markdown")
+    print("4. summary (json_extract)")
+    print("5. fit_html")
+    
+    mode_map = {
+        "1": "fit_markdown",
+        "2": "html",
+        "3": "markdown",
+        "4": "summary",
+        "5": "fit_html"
+    }
+    choice = input("Your choice [1-5]: ") or "1"
+    mode = mode_map.get(choice, "fit_markdown")
+
+    output_path = input("Output path (default: render_service/output/rendered_output.md): ") or "render_service/output/rendered_output.md"
+    return {
+        "input_path": input_path,
+        "mode": mode,
+        "output_path": output_path
+    }
 
 def load_config(path: str) -> dict:
     with open(path, "r") as f:
@@ -31,14 +60,16 @@ def save_output(content: str, output_path: str):
 
 def main():
     parser = argparse.ArgumentParser(description="Render crawl results to markdown.")
-    parser.add_argument("--config", type=str, required=True, help="Path to render profile YAML")
+    parser.add_argument("--config", type=str, help="Path to render profile YAML")
     args = parser.parse_args()
 
-    config = load_config(args.config)
-    results = load_crawl_results(config["input_path"])
-    mode = config.get("mode", "markdown-fit")
-    use_summary = mode == "json_extract"
+    if args.config:
+        config = load_config(args.config)
+    else:
+        config = prompt_for_config()
 
+    results = load_crawl_results(config["input_path"])
+    use_summary = config.get("mode") == "json_extract"
     content = render_to_markdown(results, use_summary=use_summary)
     save_output(content, config.get("output_path", "render_service/output/rendered_output.md"))
 
