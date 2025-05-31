@@ -12,9 +12,27 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 import argparse
 from pathlib import Path
+import importlib
 
-# Import the various exporters from the modules directory
-from export_service.src.modules import pdf_exporter, txt_exporter, doc_exporter
+
+def get_exporter(format_type: str):
+    """
+    Dynamically import and return the appropriate exporter module based on the requested format.
+    
+    Args:
+        format_type (str): The export format type ('pdf', 'txt', or 'doc')
+        
+    Returns:
+        module: The imported exporter module
+    """
+    if format_type == "pdf":
+        return importlib.import_module("export_service.src.modules.pdf_exporter")
+    elif format_type == "txt":
+        return importlib.import_module("export_service.src.modules.txt_exporter")
+    elif format_type == "doc":
+        return importlib.import_module("export_service.src.modules.doc_exporter")
+    else:
+        raise ValueError(f"Unsupported format: {format_type}")
 
 
 def main():
@@ -36,20 +54,21 @@ def main():
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Export to the requested format using the appropriate exporter
-    if args.format == "pdf":
-        pdf_exporter.export(args.input, f"{args.output}.pdf")
-    elif args.format == "txt":
-        txt_exporter.export(args.input, f"{args.output}.txt")
-    elif args.format == "doc":
-        doc_exporter.export(args.input, f"{args.output}.docx")
-    else:
-        # This should never happen due to the choices parameter in argparse,
-        # but included as a safeguard
-        raise ValueError(f"Unsupported format: {args.format}")
-
-    # Report successful completion
-    print(f"✅ Export completed: {args.output}.{args.format if args.format != 'doc' else 'docx'}")
+    # Only import the specific exporter module needed
+    try:
+        exporter = get_exporter(args.format)
+        
+        # Create the output filename with the appropriate extension
+        output_filename = f"{args.output}.{args.format if args.format != 'doc' else 'docx'}"
+        
+        # Call the export function from the dynamically loaded module
+        exporter.export(args.input, output_filename)
+        
+        # Report successful completion
+        print(f"✅ Export completed: {output_filename}")
+    except Exception as e:
+        print(f"❌ Export failed: {str(e)}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
