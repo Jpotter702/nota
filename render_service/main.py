@@ -81,29 +81,29 @@ def load_crawl_results(input_path: str):
     with open(input_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
-def render_to_markdown(results: list, use_summary: bool = False) -> str:
+def render_to_markdown(results: list, field: str = "fit_markdown") -> str:
     """
     Render crawl results to markdown format.
     
     Args:
         results (list): List of crawl result objects
-        use_summary (bool): Whether to use the summary field instead of fit_markdown
+        field (str): Field to use for content (default: "fit_markdown")
         
     Returns:
         str: The rendered markdown content
     """
     output = []
-    # Process each page in the results
+    skipped = 0
     for page in results:
         title = page.get("title", "Untitled")
         url = page.get("url", "")
-        # Use either the summary or fit_markdown field based on the use_summary flag
-        content = page.get("summary") if use_summary else page.get("fit_markdown")
+        content = page.get(field)
 
-        # Format the page as a markdown section
-        output.append(f"# {title}\n\n[Source]({url})\n\n{content}\n\n---\n")
-    
-    # Join all pages into a single string
+        if content:
+            output.append(f"# {title}\n\n[Source]({url})\n\n{content}\n\n---\n")
+        else:
+            skipped += 1
+    print(f"✅ Rendered {len(output)} pages | Skipped {skipped} (no '{field}')")
     return "\n".join(output)
 
 def save_output(content: str, output_path: str):
@@ -144,12 +144,19 @@ def main():
 
     # Load the crawl results
     results = load_crawl_results(config["input_path"])
-    
-    # Determine whether to use summaries based on the mode
-    use_summary = config.get("mode") == "json_extract"
-    
+
+    # Detect which field to render based on chosen mode
+    mode_to_field = {
+        "markdown": "markdown",
+        "fit_markdown": "fit_markdown",
+        "html": "html",
+        "fit_html": "fit_html",
+        "summary": "summary"
+    }
+    field = mode_to_field.get(config["mode"], "fit_markdown")
+
     # Render the content to markdown
-    content = render_to_markdown(results, use_summary=use_summary)
+    content = render_to_markdown(results, field=field)
     
     # Save the rendered output
     save_output(content, config.get("output_path", "render_service/output/rendered_output.md"))

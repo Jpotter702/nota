@@ -1,0 +1,23 @@
+# crawl_service/config/clean_content.yaml
+
+remove_selectors:
+  - header
+  - footer
+  - nav
+  - aside
+  - .sidebar
+  - .ads
+  - .cookie
+  - script
+  - style
+  - .navbar
+  - .footer
+  - .popup
+  - .modal
+  - .newsletter
+  - .overlay
+
+text_min_length: 100
+dedupe: true
+remove_duplicates: true
+smart_cleanup: true
